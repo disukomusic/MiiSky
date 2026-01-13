@@ -16,7 +16,7 @@ type BlueskySessionCtx = {
 const BlueskyCtx = createContext<BlueskySessionCtx | null>(null);
 
 const CLIENT_ID =
-    process.env.NEXT_PUBLIC_ATPROTO_CLIENT_ID || "https://wii.suko.pet/client-metadata.json";
+    process.env.NEXT_PUBLIC_ATPROTO_CLIENT_ID || "https://miisky.xyz/client-metadata.json";
 
 // Detect Plasmic editor environment
 export const isInPlasmicEditor = () => {
