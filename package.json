@@ -9,7 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@atproto/api": "^0.18.14",
+    "@atproto/oauth-client-browser": "^0.3.39",
     "@plasmicapp/loader-nextjs": "^1.0.449",
+    "atproto": "^0.0.1",
+    "hls.js": "^1.5.18",
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18"

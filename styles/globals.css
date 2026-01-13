@@ -40,3 +40,76 @@ a {
     color-scheme: dark;
   }
 }
+
+@font-face {
+  font-family: 'DSEG7 Classic';
+  src:
+          url('/fonts/DSEG7Classic-Regular.woff2') format('woff2'),
+          url('/fonts/DSEG7Classic-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DSEG7 Classic';
+  src:
+          url('/fonts/DSEG7Classic-Bold.woff2') format('woff2'),
+          url('/fonts/DSEG7Classic-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+    font-family: "FOT-Rodin Pro";
+    src: url('/fonts/FOT-Rodin-Pro-L.otf') format('opentype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "FOT-Rodin Pro";
+    src: url('/fonts/FOT-Rodin-Pro-M.otf') format('opentype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "FOT-Rodin Pro";
+    src: url('/fonts/FOT-Rodin-Pro-DB.otf') format('opentype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "FOT-Rodin Pro";
+    src: url('/fonts/FOT-Rodin-Pro-B.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "FOT-Rodin Pro";
+    src: url('/fonts/FOT-Rodin-Pro-EB.otf') format('opentype');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "FOT-Rodin Pro";
+    src: url('/fonts/FOT-Rodin-Pro-UB.otf') format('opentype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+
+
+
