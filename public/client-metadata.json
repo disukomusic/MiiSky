@@ -2,7 +2,7 @@
   "client_id": "https://www.miisky.xyz/client-metadata.json",
   "client_name": "Miisky",
   "client_uri": "https://www.miisky.xyz",
-  "redirect_uris": ["https://www.miisky.xyz/callback"],
+  "redirect_uris": ["https://www.miisky.xyz/oauth/callback"],
   "scope": "atproto transition:generic transition:chat.bsky",
   "grant_types": ["authorization_code", "refresh_token"],
   "response_types": ["code"],
