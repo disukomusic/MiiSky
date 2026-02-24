@@ -576,7 +576,7 @@ export const BlueskyFeedProvider = forwardRef((props: BlueskyProps, ref) => {
         const embed = createEmbed(uploadedBlobs, quoteUri, quoteCid);
         const record: any = {
           $type: "app.bsky.feed.post",
-          text: text.trim(),
+          text: (text || "").trim(),
           createdAt: new Date().toISOString(),
           embed: embed
         };
@@ -593,7 +593,9 @@ export const BlueskyFeedProvider = forwardRef((props: BlueskyProps, ref) => {
         // Refresh view
         mode === 'thread' ? fetchThread() : fetchFeed();
       } catch(e: any) {
+        console.error("Inside createPost error:", e);
         setPostError(e.message);
+        throw e;
       } finally {
         setPosting(false);
       }
