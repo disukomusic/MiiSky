@@ -1,5 +1,4 @@
-﻿
-import React from 'react';
+﻿import React from 'react';
 import { RichText } from '@atproto/api';
 
 interface BlueskyRichTextProps {
@@ -13,18 +12,16 @@ interface BlueskyRichTextProps {
 }
 
 export const BlueskyRichText: React.FC<BlueskyRichTextProps> = ({
-                                                                record,
-                                                                fontSize = 12,
-                                                                onTagClick,
-                                                                className,
-                                                            }) => {
+                                                                    record,
+                                                                    fontSize = 12,
+                                                                    onTagClick,
+                                                                    className,
+                                                                }) => {
     if (!record) return null;
 
-    //fix punctuation that renders weird in the font
-    const normalizedText = record.text.replace(/[\u2018\u2019\u02BC]/g, "'");
-    
-    const rt = new RichText({   
-        text: normalizedText,
+    //ATProto facets rely on exact UTF-8 byte offsets from the original text string. Mutating the string breaks them.
+    const rt = new RichText({
+        text: record.text,
         facets: record.facets,
     });
 
@@ -45,6 +42,8 @@ export const BlueskyRichText: React.FC<BlueskyRichTextProps> = ({
                     href={segment.link?.uri}
                     target="_blank"
                     rel="noopener noreferrer"
+                    //Stop event bubbling so the parent Post component doesn't trigger
+                    onClick={(e) => e.stopPropagation()}
                     style={{ color: '#61C1DF', textDecoration: 'underline' }}
                 >
                     {segment.text}
@@ -57,24 +56,36 @@ export const BlueskyRichText: React.FC<BlueskyRichTextProps> = ({
                     key={key}
                     role="button"
                     tabIndex={0}
-                    onClick={() => onTagClick?.(tag)}
-                    onKeyDown={(e) =>
-                        (e.key === 'Enter' || e.key === ' ') && onTagClick?.(tag)
-                    }
+                    onClick={(e) => {
+                        e.stopPropagation(); // FIX 2: Stop bubbling
+                        onTagClick?.(tag);
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.stopPropagation();
+                            onTagClick?.(tag);
+                        }
+                    }}
                     style={{
                         color: '#61C1DF',
                         cursor: 'pointer',
                         fontWeight: 600,
                     }}
                 >
-          {segment.text}
-        </span>
+                    {segment.text}
+                </span>
             );
         } else if (segment.isMention()) {
             nodes.push(
-                <span key={key} style={{ color: '#61C1DF' }}>
-          {segment.text}
-        </span>
+                <span
+                    key={key}
+                    style={{ color: '#61C1DF', cursor: 'pointer' }}
+                    // Added stopPropagation here as well, in case you eventually 
+                    // add an onMentionClick handler to navigate to user profiles.
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {segment.text}
+                </span>
             );
         } else {
             nodes.push(<span key={key}>{segment.text}</span>);
