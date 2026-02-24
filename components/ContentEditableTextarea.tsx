@@ -137,24 +137,20 @@ export const ContentEditableTextarea = React.forwardRef<
             clearText() {
                 const el = innerRef.current;
                 if (!el) return;
-                if (isControlled) {
-                    // Controlled: ask parent to set value to empty
-                    onChange?.("");
-                } else {
-                    // Uncontrolled: mutate DOM and notify
-                    el.textContent = "";
-                    emitChange();
-                }
+
+                // 1. Force clear the DOM visually
+                el.textContent = "";
+                // 2. Notify Plasmic/Parent so state stays in sync
+                emitChange();
             },
             setText(text: string) {
                 const el = innerRef.current;
                 if (!el) return;
-                if (isControlled) {
-                    onChange?.(text);
-                } else {
-                    el.textContent = text ?? "";
-                    emitChange();
-                }
+
+                // 1. Force update the DOM visually
+                el.textContent = text ?? "";
+                // 2. Notify Plasmic/Parent
+                emitChange();
             },
             focus() {
                 innerRef.current?.focus();
@@ -163,7 +159,7 @@ export const ContentEditableTextarea = React.forwardRef<
                 innerRef.current?.blur();
             },
         }),
-        [isControlled, onChange, emitChange]
+        [emitChange]
     );
 
     // Placeholder behavior via data attr + CSS
