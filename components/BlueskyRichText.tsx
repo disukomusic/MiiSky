@@ -11,6 +11,12 @@ interface BlueskyRichTextProps {
     fontSize?: number;
 }
 
+// Helper function to fix the weird font rendering for smart quotes
+const fixDisplayQuotes = (text: string | undefined) => {
+    if (!text) return '';
+    return text.replace(/[\u2018\u2019\u02BC]/g, "'");
+};
+
 export const BlueskyRichText: React.FC<BlueskyRichTextProps> = ({
                                                                     record,
                                                                     fontSize = 12,
@@ -19,7 +25,7 @@ export const BlueskyRichText: React.FC<BlueskyRichTextProps> = ({
                                                                 }) => {
     if (!record) return null;
 
-    //ATProto facets rely on exact UTF-8 byte offsets from the original text string. Mutating the string breaks them.
+    // 1. Pass the RAW text to the parser so the byte-offsets for facets stay perfectly aligned
     const rt = new RichText({
         text: record.text,
         facets: record.facets,
@@ -42,11 +48,10 @@ export const BlueskyRichText: React.FC<BlueskyRichTextProps> = ({
                     href={segment.link?.uri}
                     target="_blank"
                     rel="noopener noreferrer"
-                    //Stop event bubbling so the parent Post component doesn't trigger
                     onClick={(e) => e.stopPropagation()}
                     style={{ color: '#61C1DF', textDecoration: 'underline' }}
                 >
-                    {segment.text}
+                    {fixDisplayQuotes(segment.text)}
                 </a>
             );
         } else if (segment.isTag()) {
@@ -57,7 +62,7 @@ export const BlueskyRichText: React.FC<BlueskyRichTextProps> = ({
                     role="button"
                     tabIndex={0}
                     onClick={(e) => {
-                        e.stopPropagation(); // FIX 2: Stop bubbling
+                        e.stopPropagation();
                         onTagClick?.(tag);
                     }}
                     onKeyDown={(e) => {
@@ -72,7 +77,7 @@ export const BlueskyRichText: React.FC<BlueskyRichTextProps> = ({
                         fontWeight: 600,
                     }}
                 >
-                    {segment.text}
+                    {fixDisplayQuotes(segment.text)}
                 </span>
             );
         } else if (segment.isMention()) {
@@ -80,15 +85,13 @@ export const BlueskyRichText: React.FC<BlueskyRichTextProps> = ({
                 <span
                     key={key}
                     style={{ color: '#61C1DF', cursor: 'pointer' }}
-                    // Added stopPropagation here as well, in case you eventually 
-                    // add an onMentionClick handler to navigate to user profiles.
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {segment.text}
+                    {fixDisplayQuotes(segment.text)}
                 </span>
             );
         } else {
-            nodes.push(<span key={key}>{segment.text}</span>);
+            nodes.push(<span key={key}>{fixDisplayQuotes(segment.text)}</span>);
         }
     }
 
