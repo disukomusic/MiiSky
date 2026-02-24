@@ -563,7 +563,11 @@ export const BlueskyFeedProvider = forwardRef((props: BlueskyProps, ref) => {
             }
 
             const encoding = compressed.type || "image/jpeg";
-            const { data } = await agent.uploadBlob(compressed, { encoding });
+
+            const buffer = await compressed.arrayBuffer();
+            const uint8Array = new Uint8Array(buffer);
+
+            const { data } = await agent.uploadBlob(uint8Array, { encoding });
 
             uploadedBlobs.push({ blob: data.blob, alt: "" });
           }
