@@ -7,6 +7,8 @@ import { BlueskyVideo } from "./components/BlueskyVideo";
 import { ContentEditableTextarea } from "./components/ContentEditableTextarea";
 import { AutoScrollDiv } from "./components/AutoScrollDiv";
 import { DrawingCanvas } from "./components/DrawingCanvas";
+import { InfiniteScrollTrigger } from "./components/InfiniteScrollTrigger";
+import { VirtualFeed } from './components/VirtualFeed';
 
 export const PLASMIC = initPlasmicLoader({
   projects: [
@@ -300,7 +302,6 @@ PLASMIC.registerComponent(ContentEditableTextarea, {
       description: "Reset the text to empty",
       argTypes: [],
     },
-    // Optional extras; handy in Studio
     setText: {
       description: "Programmatically set the text",
       argTypes: [{ name: "text", type: "string" }],
@@ -379,6 +380,43 @@ PLASMIC.registerComponent(DrawingCanvas, {
     setBrushSize: { description: 'Set brush size (small/large)', argTypes: [{ name: 'size', type: 'string' }] },
     setColor: { description: 'Set brush color', argTypes: [{ name: 'color', type: 'string' }] },
     getBlob: { description: 'Get drawing as Blob (async)', argTypes: [] },
+  },
+});
+
+PLASMIC.registerComponent(InfiniteScrollTrigger, {
+  name: 'InfiniteScrollTrigger',
+  props: {
+    triggerDistance: {
+      type: 'number',
+      defaultValue: 200,
+      description: "How many pixels away from the bottom to start loading more posts.",
+    },
+    loading: 'boolean',
+    hasMore: 'boolean',
+    onScrollEnter: {
+      type: 'eventHandler',
+      argTypes: [],
+    },
+  },
+});
+
+PLASMIC.registerComponent(VirtualFeed, {
+  name: 'VirtualFeed',
+  providesData: true,
+  props: {
+    items: {
+      type: 'array',
+      description: 'The array of posts to render',
+    },
+    children: {
+      type: 'slot',
+      description: 'The design component for a single post',
+    },
+    onEndReached: {
+      type: 'eventHandler',
+      argTypes: [],
+      description: 'Triggered when the user scrolls near the bottom',
+    },
   },
 });
 

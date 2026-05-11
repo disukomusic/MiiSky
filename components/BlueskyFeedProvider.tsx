@@ -93,6 +93,8 @@ export const BlueskyFeedProvider = forwardRef((props: BlueskyProps, ref) => {
    * FEED FETCHING
    * ----------------------------------------------------------------------------- */
   const cursorRef = useRef<string | undefined>(undefined);
+  const isFetchingRef = useRef(false);
+
 
   const fetchFeed = useCallback(async (loadMore = false) => {
     console.log("fetchFeed called", { loadMore, cursor: cursorRef.current });
@@ -603,8 +605,11 @@ export const BlueskyFeedProvider = forwardRef((props: BlueskyProps, ref) => {
  
     // --- Load More Posts ---
     loadMore: async () => {
-      if (!hasMore || loading) return;
+      if (!hasMore || loading || isFetchingRef.current) return;
+
+      isFetchingRef.current = true;
       await fetchFeed(true);
+      isFetchingRef.current = false;
     },
     
     // --- Load More Actor Data ---
