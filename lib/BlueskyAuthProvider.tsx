@@ -23,20 +23,41 @@ export const isInPlasmicEditor = () => {
     if (typeof window === "undefined") return false;
     return (
         window.location.hostname === "studio.plasmic.app" ||
-        window.parent !== window ||
-        window.location.hostname === "127.0.0.1" ||
-        window.location.hostname === "localhost"
+        window.parent !== window
     );
 };
 
 export function BlueskyAuthProvider({ children }: { children: React.ReactNode }) {
+    // 1. Dynamically resolve Client ID to support Localhost Loopback 
+    const clientId = useMemo(() => {
+        // Fallback 1: Explicit Env Variable
+        if (process.env.NEXT_PUBLIC_ATPROTO_CLIENT_ID) {
+            return process.env.NEXT_PUBLIC_ATPROTO_CLIENT_ID;
+        }
+
+        // Fallback 2: Localhost Loopback Client (AT Proto Spec)
+        if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+            const port = window.location.port ? `:${window.location.port}` : '';
+            // NOTE: ATProto spec enforces 127.0.0.1 over localhost for local redirect URIs.
+            const redirectUri = `http://127.0.0.1${port}/`;
+
+            // This scope MUST match what you return in getScope() below
+            const scope = "atproto transition:generic transition:chat.bsky";
+
+            return `http://localhost?redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
+        }
+
+        // Fallback 3: Production Client Metadata
+        return "https://www.miisky.xyz/client-metadata.json";
+    }, []);
+
     const { agent: oauthAgent, session, isInitializing, signIn, signOut, client } = useOAuth({
-        clientId: CLIENT_ID,
+        clientId: clientId, // Use the dynamically resolved clientId
         handleResolver: "https://bsky.social",
         responseMode: "query",
         getScope: () => "atproto transition:generic transition:chat.bsky",
     });
-
+    
     const [currentUser, setCurrentUser] = useState<any | null>(null);
     const [hasFetchedUser, setHasFetchedUser] = useState(false);
     const [devMode, setDevMode] = useState(false);
