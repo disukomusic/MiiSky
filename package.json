@@ -12,6 +12,7 @@
     "@atproto/api": "^0.18.14",
     "@atproto/oauth-client-browser": "^0.3.39",
     "@plasmicapp/loader-nextjs": "^1.0.449",
+    "@tanstack/react-query": "^5.101.0",
     "atproto": "^0.0.1",
     "hls.js": "^1.5.18",
     "next": "14.2.35",
