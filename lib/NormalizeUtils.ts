@@ -137,12 +137,27 @@ export const getDisplayVideo = (embed: any) => {
  * - This function is recursive for parent/replies.
  * - It returns null if the node doesn’t resolve to a post with a URI.
  */
-export const normalizePost = (node: any) => {
-    /**
-     * Some endpoints wrap the post under `node.post` (feed items),
-     * while others return the post object directly (thread/post view).
-     * This line supports both.
-     */
+export interface NormalizedPost {
+    post: any;
+    repostedBy: any | null;
+    repostTime: string | null;
+    replyTime: string | null;
+    quoteTime: string | null;
+    parent: NormalizedPost | null;
+    quote: any | null;
+    displayImages: any[];
+    displayVideo: {
+        playlist: string;
+        thumbnail?: string;
+        alt?: string;
+        cid: string;
+    } | null;
+    externalLink: any | null;
+    replies: NormalizedPost[];
+    likers: any[];
+}
+
+export const normalizePost = (node: any): NormalizedPost | null => {
     const post = node?.post ? node.post : node;
 
     // If we can't identify the post, fail gracefully.
@@ -193,27 +208,8 @@ export const normalizePost = (node: any) => {
 
         /** Video payload if present, else null. */
         displayVideo: getDisplayVideo(embed),
-
-        /**
-         * External link data (only when embed is specifically an external view).
-         * UI can render title/description/thumb/etc.
-         */
-        externalLink:
-            embed?.$type === "app.bsky.embed.external#view" ? embed.external : null,
-
-        /**
-         * Keep children/replies attached if we are normalizing a tree node.
-         * This is typical in thread mode; `node.replies` is an array of reply nodes.
-         * - We normalize each reply recursively
-         * - filter(Boolean) removes nulls from any malformed nodes
-         */
-        replies: node.replies ? node.replies.map(normalizePost).filter(Boolean) : [],
-
-        /**
-         * Placeholder for future enrichment:
-         * You can later populate this with profiles of users who liked the post
-         * (or just counts), without changing UI bindings.
-         */
+        externalLink: embed?.$type === "app.bsky.embed.external#view" ? embed.external : null,
+        replies: node.replies ? node.replies.map(normalizePost).filter((reply: NormalizedPost | null): reply is NormalizedPost => reply !== null) : [],
         likers: [],
     };
 };

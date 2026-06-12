@@ -1,6 +1,6 @@
-﻿
-import type { BskyAgent } from "@atproto/api";
+﻿import { AppBskyFeedDefs, type BskyAgent } from "@atproto/api";
 import { normalizePost } from "@/lib/NormalizeUtils";
+
 /**
  * Fetches a Bluesky post thread and breaks it into three UI-friendly buckets:
  *
@@ -14,9 +14,9 @@ import { normalizePost } from "@/lib/NormalizeUtils";
  *
  * Thread endpoint behavior (conceptual):
  * - `getPostThread` returns a "thread view" node with:
- *   - `.post` (the post view)
- *   - `.parent` (another thread node pointing upward)
- *   - `.replies` (array of thread nodes pointing downward)
+ * - `.post` (the post view)
+ * - `.parent` (another thread node pointing upward)
+ * - `.replies` (array of thread nodes pointing downward)
  * - Some nodes may be missing/blocked/not-found and lack `.post.uri`.
  */
 export async function fetchThreadImpl(opts: {
@@ -109,14 +109,10 @@ export async function fetchThreadImpl(opts: {
         // -------------------------------------------------------------------------
 
         /**
-         * Some thread responses may not include a real post object if:
-         * - the post is deleted
-         * - the viewer is blocked / cannot view it
-         * - moderation rules hide it
-         *
-         * We treat "missing post.uri" as an invalid thread root.
+         * Use the native AT-Proto type guard to verify this is a valid thread node.
+         * If it's a NotFoundPost or BlockedPost, this evaluates to false.
          */
-        if (!root?.post?.uri) {
+        if (!AppBskyFeedDefs.isThreadViewPost(root)) {
             setThreadError("Post not found or blocked");
             setThreadAncestors([]);
             setThreadFocused(null);
@@ -127,24 +123,22 @@ export async function fetchThreadImpl(opts: {
         // -------------------------------------------------------------------------
         // 2) Build ancestors list by walking "up" the parent chain
         // -------------------------------------------------------------------------
-
-        /**
-         * `root.parent` points to the immediate parent thread node (the post being replied to),
-         * and that node may have its own `.parent`, etc.
-         *
-         * We walk upward and collect nodes in an array.
-         */
         const ancestorsRaw: any[] = [];
         let current = root.parent;
 
         while (current) {
-            // Only push nodes that actually contain a post view.
-            if (current.post) ancestorsRaw.push(current);
+            // Type-guard the current ancestor before accessing .post or .parent
+            if (AppBskyFeedDefs.isThreadViewPost(current)) {
+                ancestorsRaw.push(current);
 
-            // Move upward to the next parent.
-            current = current.parent;
+                // Move upward to the next parent
+                current = current.parent;
+            } else {
+                // If an ancestor is a NotFoundPost or BlockedPost, we can't traverse further.
+                break;
+            }
         }
-
+        
         /**
          * The loop collects ancestors from nearest parent -> oldest ancestor.
          * For UI rendering, we typically want oldest -> newest so the thread reads top-down.
