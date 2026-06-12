@@ -8,7 +8,7 @@ import { fetchThreadImpl } from "@/lib/Thread";
 import { fetchFeedImpl } from "@/lib/Feed";
 import { fetchSavedFeedsImpl } from "@/lib/preferences";
 import { useActorFetchers } from "@/lib/actorViewUtils";
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { InfiniteData, useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 /* =========================================================================================
  * PROVIDER COMPONENT
@@ -52,14 +52,17 @@ export const BlueskyFeedProvider = forwardRef<unknown, BlueskyProps>((props, ref
   }, [scrollTargetUri]);
 
   // --- 1. Feed Query (Infinite Pagination) ---
+  type FeedPage = { posts: any[]; cursor?: string };
+  const feedQueryKey = ['feed', mode, actor, feedUrl, searchQuery] as const;
   const {
     data: feedData,
     fetchNextPage,
     hasNextPage,
     isFetching: isFeedLoading,
     error: feedError
-  } = useInfiniteQuery({
-    queryKey: ['feed', mode, actor, feedUrl, searchQuery],
+  } = useInfiniteQuery<FeedPage, Error, InfiniteData<FeedPage, string | undefined>, typeof feedQueryKey, string | undefined>({
+    queryKey: feedQueryKey,
+    initialPageParam: undefined,
     queryFn: async ({ pageParam }) => {
       if (!agent) throw new Error("Agent not ready");
       return await fetchFeedImpl({
@@ -72,11 +75,11 @@ export const BlueskyFeedProvider = forwardRef<unknown, BlueskyProps>((props, ref
         cursor: pageParam as string | undefined
       });
     },
-    getNextPageParam: (lastPage) => lastPage.cursor || undefined,
+    getNextPageParam: (lastPage) => lastPage.cursor ?? undefined,
     enabled: !!agent && mode !== 'thread',
   });
 
-  const posts = useMemo(() => feedData?.pages.flatMap(page => page.posts) || [], [feedData]);
+  const posts = useMemo(() => feedData?.pages.flatMap((page) => page.posts) || [], [feedData]);
 
   // Clear scroll target once posts load
   useEffect(() => {
@@ -176,6 +179,45 @@ export const BlueskyFeedProvider = forwardRef<unknown, BlueskyProps>((props, ref
     }
   });
 
+  const fetchLikesMutation = useMutation({
+    mutationFn: async ({ uri, limit }: { uri: string; limit: number }) => {
+      if (!agent) throw new Error("No agent");
+      const res = await agent.getLikes({ uri, limit });
+      return res.data.likes.map((l: any) => l.actor);
+    },
+    onSuccess: (likersData, variables) => {
+      if (mode === 'thread') {
+        // Update Thread Cache
+        queryClient.setQueryData(['thread', threadUri], (old: any) => {
+          if (!old) return old;
+          const updateNode = (node: any) =>
+              node?.post?.uri === variables.uri ? { ...node, likers: likersData } : node;
+
+          return {
+            ...old,
+            focused: updateNode(old.focused),
+            ancestors: old.ancestors?.map(updateNode),
+            replies: old.replies?.map(updateNode)
+          };
+        });
+      } else {
+        // Update Feed Cache (Handles feed, timeline, author, search)
+        queryClient.setQueryData(['feed', mode, actor, feedUrl, searchQuery], (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              posts: page.posts.map((item: any) =>
+                  item.post.uri === variables.uri ? { ...item, likers: likersData } : item
+              )
+            }))
+          };
+        });
+      }
+    }
+  });
+  
   const createPostMutation = useMutation({
     mutationFn: async ({
                          text, images = [], quoteUri, quoteCid, replyParentUri, replyParentCid, replyRootUri, replyRootCid
@@ -234,7 +276,9 @@ export const BlueskyFeedProvider = forwardRef<unknown, BlueskyProps>((props, ref
     fetchActorFollowers,
     fetchActorFollowing,
     fetchActorLists,
-
+    fetchPostLikes: async (uri: string, limit: number = 20) => {
+      await fetchLikesMutation.mutateAsync({ uri, limit });
+    },
     login: async (identifier?: string, appPassword?: string) => {
       const id = identifier ?? props.identifier;
       const pw = appPassword ?? props.appPassword;
@@ -290,9 +334,6 @@ export const BlueskyFeedProvider = forwardRef<unknown, BlueskyProps>((props, ref
       createPostMutation.mutate({ text, images, quoteUri, quoteCid, replyParentUri, replyParentCid, replyRootUri, replyRootCid });
     },
 
-    fetchPostLikes: async (uri: string, limit: number = 20) => {
-      // Handled automatically by background refetching in this architecture, but left exposed for Plasmic compatibility
-    },
 
     loadMore: async () => {
       if (hasNextPage && !isFeedLoading) {
@@ -312,7 +353,7 @@ export const BlueskyFeedProvider = forwardRef<unknown, BlueskyProps>((props, ref
             posts,
             loading: isFeedLoading || (!currentUser && isLoggedIn),
             error: feedError ? String(feedError) : null,
-            hasMore: !!hasNextPage,
+            hasMore: hasNextPage,
             isLoggedIn,
             currentUser: currentUser || {},
             savedFeeds,
