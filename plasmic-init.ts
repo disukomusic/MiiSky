@@ -9,6 +9,7 @@ import { AutoScrollDiv } from "./components/AutoScrollDiv";
 import { DrawingCanvas } from "./components/DrawingCanvas";
 import { InfiniteScrollTrigger } from "./components/InfiniteScrollTrigger";
 import { VirtualFeed } from './components/VirtualFeed';
+import { DemoFeedProvider } from "./components/DemoFeedProvider";
 
 export const PLASMIC = initPlasmicLoader({
   projects: [
@@ -420,7 +421,44 @@ PLASMIC.registerComponent(VirtualFeed, {
   },
 });
 
+PLASMIC.registerComponent(DemoFeedProvider, {
+  name: 'DemoFeedProvider',
+  props: {
+    // 1. Mode Selection (Restricted to public modes)
+    mode: {
+      type: 'choice',
+      options: [
+        { label: 'User Profile', value: 'author' },
+        { label: 'Specific Feed (URL)', value: 'feed' },
+        { label: 'Search Query', value: 'search' },
+      ],
+      defaultValue: 'author'
+    },
 
+    actor: {
+      type: 'string',
+      defaultValue: 'bsky.app',
+      description: 'Handle (required for User Profile mode)',
+      hidden: (props) => props.mode !== 'author'
+    },
+    feedUrl: {
+      type: 'string',
+      description: 'Full URL or at:// URI. Leave empty for Discover.',
+      hidden: (props) => props.mode !== 'feed'
+    },
+    searchQuery: {
+      type: 'string',
+      defaultValue: 'Plasmic',
+      description: 'Search terms',
+      hidden: (props) => props.mode !== 'search'
+    },
+
+    limit: { type: 'number', defaultValue: 20 },
+
+    children: 'slot',
+  },
+  providesData: true,
+});
 
 
 
